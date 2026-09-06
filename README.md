@@ -127,7 +127,7 @@ npm run build
 | --- | --- | --- |
 | 0 | Scaffold: Laravel, Inertia, the design system, the checks and CI | ✅ |
 | 1 | Foundation: accounts, sessions, the shell | ✅ |
-| 2 | Organizations and per-organization roles | |
+| 2 | Organizations and per-organization roles | ✅ |
 | 3a | Leagues, clubs, players, and the list machinery | |
 | 3b | Seasons, squad registration, rosters | |
 | 4 | Round-robin fixture generation | |

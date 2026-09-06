@@ -135,7 +135,7 @@ it('tells every page who is signed in', function (): void {
     actingAs($user)
         ->get('/dashboard')
         ->assertInertia(fn (AssertableInertia $page) => $page
-            ->component('Dashboard')
+            ->component('organizations/Index')
             ->where('auth.user.email', 'ada@example.com')
             ->where('auth.user.first_name', 'Ada'));
 });

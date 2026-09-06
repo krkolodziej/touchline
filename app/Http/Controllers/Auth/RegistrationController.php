@@ -36,6 +36,6 @@ class RegistrationController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->route('dashboard');
+        return redirect()->route('organizations.index');
     }
 }

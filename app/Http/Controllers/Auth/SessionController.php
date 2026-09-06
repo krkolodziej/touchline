@@ -27,7 +27,7 @@ class SessionController extends Controller
         // planted in the browser before sign-in is still valid after it.
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard'));
+        return redirect()->intended(route('organizations.index'));
     }
 
     public function destroy(Request $request): RedirectResponse

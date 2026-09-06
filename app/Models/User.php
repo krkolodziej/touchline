@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Carbon;
 
@@ -22,6 +23,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property-read non-empty-string $full_name
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, OrganizationMembership> $memberships
  */
 class User extends Authenticatable
 {
@@ -33,6 +35,12 @@ class User extends Authenticatable
 
     /** @var list<string> */
     protected $hidden = ['password'];
+
+    /** @return HasMany<OrganizationMembership, $this> */
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(OrganizationMembership::class);
+    }
 
     /**
      * Normalised on the way in rather than on the way out, so the unique index sees the
