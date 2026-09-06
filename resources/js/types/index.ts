@@ -52,3 +52,79 @@ export interface Membership {
   role: OrganizationRole
   created_at: string
 }
+
+export type PlayerPosition = 'GOALKEEPER' | 'DEFENDER' | 'MIDFIELDER' | 'FORWARD'
+
+export const PLAYER_POSITIONS: PlayerPosition[] = [
+  'GOALKEEPER',
+  'DEFENDER',
+  'MIDFIELDER',
+  'FORWARD',
+]
+
+export interface League {
+  id: number
+  organization_id: number
+  name: string
+  slug: string
+  description: string
+  created_at: string
+  season_count: number
+}
+
+export interface Team {
+  id: number
+  organization_id: number
+  name: string
+  short_name: string
+  slug: string
+  created_at: string
+  squad_size: number
+  seasons_played: number
+}
+
+export interface Player {
+  id: number
+  organization_id: number
+  first_name: string
+  last_name: string
+  full_name: string
+  date_of_birth: string | null
+  age: number | null
+  created_at: string
+}
+
+/** The paginated envelope. Page numbers, not URLs — see the server side for why. */
+export interface ResultPage<T> {
+  count: number
+  page: number
+  page_size: number
+  next: number | null
+  previous: number | null
+  results: T[]
+}
+
+export interface ListQueryState {
+  search: string
+  page: number | null
+  page_size: number | null
+  order: string | null
+}
+
+/**
+ * A collection arrives either as a plain array or as the envelope, depending on whether the
+ * caller asked for a page. Both shapes are read the same way from here on.
+ */
+export function toRows<T>(value: T[] | ResultPage<T>): {
+  rows: T[]
+  page: ResultPage<T> | null
+} {
+  return Array.isArray(value) ? { rows: value, page: null } : { rows: value.results, page: value }
+}
+
+export interface OrganizationTabProps {
+  organization: Organization
+  counts: { leagues: number; clubs: number; players: number; members: number }
+  can_manage: boolean
+  can_delete: boolean
+}

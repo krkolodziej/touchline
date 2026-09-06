@@ -5,11 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Domain\Organization\OrganizationManager;
-use App\Enums\OrganizationRole;
 use App\Http\Requests\OrganizationRequest;
-use App\Http\Resources\MembershipResource;
 use App\Http\Resources\OrganizationResource;
-use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\User;
 use App\Support\Scope\OrganizationScope;
@@ -77,35 +74,14 @@ class OrganizationController extends Controller
             $request->has('slug') ? $request->string('slug')->value() : null,
         );
 
-        return redirect()->route('organizations.show', $membership->organization_id);
+        return redirect()->route('organizations.leagues', $membership->organization_id);
     }
 
-    public function show(OrganizationScope $scope): Response
+    public function show(OrganizationScope $scope): RedirectResponse
     {
         Gate::authorize(Permission::VIEW, $scope);
 
-        $organization = $scope->organization();
-
-        $memberships = OrganizationMembership::query()
-            ->with('user')
-            ->where('organization_id', $organization->id)
-            ->get()
-            ->sortBy([
-                fn (OrganizationMembership $a, OrganizationMembership $b): int => $a->role->rank() <=> $b->role->rank(),
-                fn (OrganizationMembership $a, OrganizationMembership $b): int => strcmp($a->user->email, $b->user->email),
-            ])
-            ->values();
-
-        return Inertia::render('organizations/Show', [
-            'organization' => (new OrganizationResource(
-                $organization,
-                $scope->role(),
-                $memberships->count(),
-            ))->resolve(),
-            'members' => MembershipResource::collection($memberships)->resolve(),
-            'can_manage' => $scope->role()->canManage(),
-            'can_delete' => $scope->role() === OrganizationRole::Owner,
-        ]);
+        return redirect()->route('organizations.leagues', $scope->organization()->id);
     }
 
     public function update(OrganizationRequest $request, OrganizationScope $scope): RedirectResponse

@@ -174,9 +174,9 @@ it('lists the roster owners first', function (): void {
     memberOf($organization, OrganizationRole::Admin);
     $owner = memberOf($organization, OrganizationRole::Owner);
 
-    actingAs($owner)->get("/organizations/{$organization->id}")
+    actingAs($owner)->get("/organizations/{$organization->id}/members")
         ->assertInertia(fn (AssertableInertia $page) => $page
-            ->component('organizations/Show')
+            ->component('organizations/Members')
             ->has('members', 3)
             ->where('members.0.role', 'OWNER')
             ->where('members.1.role', 'ADMIN')
@@ -189,7 +189,7 @@ it('tells a plain member it may not manage or delete', function (): void {
     $organization = OrganizationFactory::new()->createOne();
     $member = memberOf($organization);
 
-    actingAs($member)->get("/organizations/{$organization->id}")
+    actingAs($member)->get("/organizations/{$organization->id}/members")
         ->assertInertia(fn (AssertableInertia $page) => $page
             ->where('can_manage', false)
             ->where('can_delete', false));

@@ -1,33 +1,35 @@
-import { Head, router, usePage } from '@inertiajs/react'
+import { Head, router } from '@inertiajs/react'
 import { Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 
 import { PageHeading } from '@/components/data/PageHeading'
-import { MembersPanel } from '@/components/organizations/MembersPanel'
+import { Tabs } from '@/components/data/Tabs'
 import { RoleBadge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
-import type { Membership, Organization, SharedProps } from '@/types'
+import type { OrganizationTabProps } from '@/types'
 
-export default function OrganizationShow({
+/**
+ * The header and tab strip every organization screen shares.
+ *
+ * An organization has no page of its own — it is four lists, and the first of them is what
+ * somebody came to see. Landing on a summary they then have to click through would be one
+ * click between them and the thing they asked for.
+ */
+export function OrganizationLayout({
   organization,
-  members,
-  can_manage: canManage,
+  counts,
   can_delete: canDelete,
-}: {
-  organization: Organization
-  members: Membership[]
-  can_manage: boolean
-  can_delete: boolean
-}) {
-  const { errors } = usePage<SharedProps>().props
+  children,
+}: OrganizationTabProps & { children: ReactNode }) {
   const [confirming, setConfirming] = useState(false)
+  const base = `/organizations/${organization.id}`
 
   return (
     <>
       <Head title={organization.name} />
 
-      <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-6">
         <PageHeading
           title={organization.name}
           subtitle={organization.slug}
@@ -47,12 +49,16 @@ export default function OrganizationShow({
           }
         />
 
-        <MembersPanel
-          organizationId={organization.id}
-          members={members}
-          canManage={canManage}
-          conflict={errors.conflict}
+        <Tabs
+          tabs={[
+            { href: `${base}/leagues`, label: 'Leagues', count: counts.leagues },
+            { href: `${base}/clubs`, label: 'Clubs', count: counts.clubs },
+            { href: `${base}/players`, label: 'Players', count: counts.players },
+            { href: `${base}/members`, label: 'Members', count: counts.members },
+          ]}
         />
+
+        <div className="pt-2">{children}</div>
       </div>
 
       <Dialog
@@ -65,10 +71,7 @@ export default function OrganizationShow({
           <Button variant="ghost" onClick={() => setConfirming(false)}>
             Keep it
           </Button>
-          <Button
-            variant="danger"
-            onClick={() => router.delete(`/organizations/${organization.id}`)}
-          >
+          <Button variant="danger" onClick={() => router.delete(base)}>
             Delete for good
           </Button>
         </div>

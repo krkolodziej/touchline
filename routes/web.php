@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Auth\SessionController;
+use App\Http\Controllers\LeagueController;
 use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\OrganizationController;
+use App\Http\Controllers\PlayerController;
+use App\Http\Controllers\TeamController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard')->name('home');
@@ -26,15 +29,43 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/dashboard', [OrganizationController::class, 'index'])->name('organizations.index');
     Route::post('/organizations', [OrganizationController::class, 'store'])->name('organizations.store');
 
-    // Every id in the path is constrained to digits. A non-numeric segment is a 404 from
-    // the router rather than a query with a cast in it.
+    // Every id in the path is constrained to digits. A non-numeric segment is a 404 from the
+    // router rather than a query with a cast in it.
     Route::prefix('/organizations/{organization}')
         ->whereNumber('organization')
         ->group(function (): void {
-            Route::get('/', [OrganizationController::class, 'show'])->name('organizations.show');
             Route::patch('/', [OrganizationController::class, 'update'])->name('organizations.update');
             Route::delete('/', [OrganizationController::class, 'destroy'])->name('organizations.destroy');
 
+            // An organization has no page of its own — it is four tabs, and the first of
+            // them is what somebody came to see. A `Route::redirect` cannot serve this: the
+            // route parameter is bound to a scope object, and interpolating one into a URL
+            // template is not a thing. It also has to answer 404 to a stranger, which a
+            // static redirect would not.
+            Route::get('/', [OrganizationController::class, 'show'])->name('organizations.show');
+
+            Route::get('/leagues', [LeagueController::class, 'index'])->name('organizations.leagues');
+            Route::post('/leagues', [LeagueController::class, 'store'])->name('leagues.store');
+            Route::patch('/leagues/{leagueId}', [LeagueController::class, 'update'])
+                ->whereNumber('leagueId')->name('leagues.update');
+            Route::delete('/leagues/{leagueId}', [LeagueController::class, 'destroy'])
+                ->whereNumber('leagueId')->name('leagues.destroy');
+
+            Route::get('/clubs', [TeamController::class, 'index'])->name('organizations.clubs');
+            Route::post('/clubs', [TeamController::class, 'store'])->name('teams.store');
+            Route::patch('/clubs/{teamId}', [TeamController::class, 'update'])
+                ->whereNumber('teamId')->name('teams.update');
+            Route::delete('/clubs/{teamId}', [TeamController::class, 'destroy'])
+                ->whereNumber('teamId')->name('teams.destroy');
+
+            Route::get('/players', [PlayerController::class, 'index'])->name('organizations.players');
+            Route::post('/players', [PlayerController::class, 'store'])->name('players.store');
+            Route::patch('/players/{playerId}', [PlayerController::class, 'update'])
+                ->whereNumber('playerId')->name('players.update');
+            Route::delete('/players/{playerId}', [PlayerController::class, 'destroy'])
+                ->whereNumber('playerId')->name('players.destroy');
+
+            Route::get('/members', [MembershipController::class, 'index'])->name('organizations.members');
             Route::post('/members', [MembershipController::class, 'store'])->name('members.store');
             Route::patch('/members/{membershipId}', [MembershipController::class, 'update'])
                 ->whereNumber('membershipId')->name('members.update');
