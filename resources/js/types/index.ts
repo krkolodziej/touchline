@@ -193,3 +193,36 @@ export interface Fixture {
   /** What the server would accept right now. The client keeps no copy of the rules. */
   allowed_transitions: MatchStatus[]
 }
+
+export type MatchEventType = 'GOAL' | 'YELLOW_CARD' | 'RED_CARD' | 'SUBSTITUTION'
+
+export const MATCH_EVENT_TYPES: MatchEventType[] = [
+  'GOAL',
+  'YELLOW_CARD',
+  'RED_CARD',
+  'SUBSTITUTION',
+]
+
+export interface MatchEvent {
+  id: number
+  fixture_id: number
+  type: MatchEventType
+  minute: number
+  team_id: number
+  /** Which side of the timeline it belongs on. Derived on the server. */
+  home: boolean
+  player_id: number
+  player_name: string
+  related_player_id: number | null
+  related_player_name: string | null
+}
+
+export interface SquadForMatch {
+  team_id: number
+  team_name: string
+  players: { id: number; full_name: string; shirt_number: number | null }[]
+}
+
+export function isLive(fixture: Fixture): boolean {
+  return fixture.status === 'LIVE'
+}

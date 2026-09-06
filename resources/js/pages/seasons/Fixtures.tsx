@@ -1,4 +1,4 @@
-import { router, useForm, usePage } from '@inertiajs/react'
+import { Link, router, useForm, usePage } from '@inertiajs/react'
 import { CalendarPlus, Trash2 } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
@@ -15,31 +15,36 @@ import type { Fixture, NamedRef, SeasonTabProps, SharedProps } from '@/types'
 const CONTROL =
   'h-9 rounded-[var(--radius-control)] border border-border-strong bg-surface px-2 text-[13px] focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25'
 
-function FixtureRow({ fixture }: { fixture: Fixture }) {
+function FixtureRow({ fixture, base }: { fixture: Fixture; base: string }) {
   const played = fixture.status === 'FINISHED' || fixture.status === 'LIVE'
 
   return (
-    <li className="flex items-center gap-3 px-4 py-2.5 text-sm">
-      <span className="min-w-0 flex-1 truncate text-right font-medium">
-        {fixture.home_team_name}
-      </span>
+    <li>
+      <Link
+        href={`${base}/fixtures/${fixture.id}`}
+        className="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-surface-muted"
+      >
+        <span className="min-w-0 flex-1 truncate text-right font-medium">
+          {fixture.home_team_name}
+        </span>
 
-      <span className="tabular w-20 shrink-0 text-center">
-        {played ? (
-          <span className="font-semibold">
-            {fixture.home_score} – {fixture.away_score}
-          </span>
-        ) : (
-          <span className="text-foreground-subtle">{formatTime(fixture.kick_off_at)}</span>
-        )}
-      </span>
+        <span className="tabular w-20 shrink-0 text-center">
+          {played ? (
+            <span className="font-semibold">
+              {fixture.home_score} – {fixture.away_score}
+            </span>
+          ) : (
+            <span className="text-foreground-subtle">{formatTime(fixture.kick_off_at)}</span>
+          )}
+        </span>
 
-      <span className="min-w-0 flex-1 truncate font-medium">{fixture.away_team_name}</span>
+        <span className="min-w-0 flex-1 truncate font-medium">{fixture.away_team_name}</span>
 
-      <span className="w-24 shrink-0 text-right">
-        {/* A scheduled match is the default state and says nothing worth a badge. */}
-        {fixture.status === 'SCHEDULED' ? null : <MatchStatusBadge status={fixture.status} />}
-      </span>
+        <span className="w-24 shrink-0 text-right">
+          {/* A scheduled match is the default state and says nothing worth a badge. */}
+          {fixture.status === 'SCHEDULED' ? null : <MatchStatusBadge status={fixture.status} />}
+        </span>
+      </Link>
     </li>
   )
 }
@@ -181,9 +186,7 @@ export default function Fixtures({
   const [clearing, setClearing] = useState(false)
   const base = `/organizations/${season.organization.id}/leagues/${season.league.id}/seasons/${season.season.id}`
 
-  const rounds = [...new Set(fixtures.map((fixture) => fixture.round_number))].sort(
-    (a, b) => a - b,
-  )
+  const rounds = [...new Set(fixtures.map((fixture) => fixture.round_number))].sort((a, b) => a - b)
 
   const filter = (changes: { round?: string; team?: string }) => {
     const params: Record<string, string> = {}
@@ -193,7 +196,11 @@ export default function Fixtures({
     if (round !== '') params.round = round
     if (team !== '') params.team = team
 
-    router.get(`${base}/fixtures`, params, { preserveState: true, preserveScroll: true, replace: true })
+    router.get(`${base}/fixtures`, params, {
+      preserveState: true,
+      preserveScroll: true,
+      replace: true,
+    })
   }
 
   return (
@@ -298,7 +305,7 @@ export default function Fixtures({
 
                   <ul className="surface-panel divide-y divide-border">
                     {inRound.map((fixture) => (
-                      <FixtureRow key={fixture.id} fixture={fixture} />
+                      <FixtureRow key={fixture.id} fixture={fixture} base={base} />
                     ))}
                   </ul>
                 </div>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Models\User;
+use App\Support\Scope\FixtureScope;
 use App\Support\Scope\LeagueScope;
 use App\Support\Scope\OrganizationScope;
 use App\Support\Scope\ScopeFactory;
@@ -61,6 +62,12 @@ class ScopeServiceProvider extends ServiceProvider
             'season',
             fn (string $value, RoutedRequest $route): SeasonScope => $this->factory()
                 ->seasonScope($this->parent($route, 'league', LeagueScope::class), (int) $value),
+        );
+
+        Route::bind(
+            'fixture',
+            fn (string $value, RoutedRequest $route): FixtureScope => $this->factory()
+                ->fixtureScope($this->parent($route, 'season', SeasonScope::class), (int) $value),
         );
 
         Route::bind(

@@ -7,8 +7,16 @@ namespace App\Domain\Organization;
 use App\Enums\OrganizationRole;
 use App\Exceptions\ConflictException;
 use App\Exceptions\OwnerMembershipIsProtectedException;
+use App\Models\Fixture;
+use App\Models\League;
+use App\Models\MatchEvent;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
+use App\Models\Player;
+use App\Models\RosterEntry;
+use App\Models\Season;
+use App\Models\SeasonTeam;
+use App\Models\Team;
 use App\Models\User;
 use App\Support\SlugGenerator;
 use Illuminate\Support\Facades\DB;
@@ -60,12 +68,49 @@ class OrganizationManager
         $organization->save();
     }
 
+    /**
+     * Deleting an organization deletes everything inside it, **in an order chosen here**.
+     *
+     * `delete()` on its own is not enough, and the reason is a rule from another stage doing
+     * its job. A match event points at the club and at the player with ON DELETE RESTRICT,
+     * deliberately: deleting one player must not quietly erase his goals from the record.
+     *
+     * Cascading straight from the organization reaches clubs and players by two different
+     * paths, and the database is free to take them in whichever order it likes — so it
+     * removes a club while its goals still exist and refuses the whole delete. Which means a
+     * competition that has actually been played becomes undeletable while one that has not
+     * deletes perfectly well. A failure that only happens to real data is worse than one
+     * that always happens.
+     *
+     * So the children go first, deepest first, in one transaction. The RESTRICT still guards
+     * the case it was written for: one club, deleted on its own, is still refused.
+     */
     public function delete(Organization $organization): void
     {
         DB::transaction(function () use ($organization): void {
-            // Later stages hang leagues, clubs, players and everything under a season off
-            // this row. Each adds its own step here, deepest first, because some of those
-            // foreign keys are RESTRICT on purpose and cascading order is not ours to pick.
+            $seasonIds = Season::query()
+                ->whereIn('league_id', League::query()
+                    ->select('id')
+                    ->where('organization_id', $organization->id))
+                ->pluck('id');
+
+            if ($seasonIds->isNotEmpty()) {
+                $fixtureIds = Fixture::query()->whereIn('season_id', $seasonIds)->pluck('id');
+                $registrationIds = SeasonTeam::query()->whereIn('season_id', $seasonIds)->pluck('id');
+
+                MatchEvent::query()->whereIn('fixture_id', $fixtureIds)->delete();
+                Fixture::query()->whereIn('season_id', $seasonIds)->delete();
+                RosterEntry::query()->whereIn('season_team_id', $registrationIds)->delete();
+                SeasonTeam::query()->whereIn('season_id', $seasonIds)->delete();
+                Season::query()->whereIn('id', $seasonIds)->delete();
+            }
+
+            foreach ([League::class, Player::class, Team::class] as $model) {
+                $model::query()->where('organization_id', $organization->id)->delete();
+            }
+
+            // Memberships hang off the organization directly and cascade cleanly, so the row
+            // itself can go last.
             $organization->delete();
         });
     }

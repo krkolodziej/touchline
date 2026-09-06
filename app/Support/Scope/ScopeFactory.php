@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support\Scope;
 
 use App\Enums\OrganizationRole;
+use App\Models\Fixture;
 use App\Models\League;
 use App\Models\Organization;
 use App\Models\Season;
@@ -74,6 +75,22 @@ class ScopeFactory
         $season->setRelation('league', $parent->league());
 
         return new SeasonScope($parent, $season);
+    }
+
+    public function fixtureScope(SeasonScope $parent, int $fixtureId): FixtureScope
+    {
+        $fixture = Fixture::query()
+            ->with(['homeTeam', 'awayTeam'])
+            ->where('season_id', $parent->season()->id)
+            ->find($fixtureId);
+
+        if ($fixture === null) {
+            throw new NotFoundHttpException;
+        }
+
+        $fixture->setRelation('season', $parent->season());
+
+        return new FixtureScope($parent, $fixture);
     }
 
     public function seasonTeamScope(SeasonScope $parent, int $seasonTeamId): SeasonTeamScope

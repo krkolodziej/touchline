@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\FixtureController;
 use App\Http\Controllers\LeagueController;
+use App\Http\Controllers\MatchController;
 use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PlayerController;
@@ -77,6 +78,27 @@ Route::middleware('auth')->group(function (): void {
                                 ->name('fixtures.generate');
                             Route::delete('/fixtures', [FixtureController::class, 'clear'])
                                 ->name('fixtures.clear');
+
+                            // One match. It gets its own address rather than a panel inside
+                            // the calendar, because it is the thing somebody sends a link to
+                            // while it is being played.
+                            Route::prefix('/fixtures/{fixture}')
+                                ->whereNumber('fixture')
+                                ->group(function (): void {
+                                    Route::get('/', [MatchController::class, 'show'])
+                                        ->name('matches.show');
+
+                                    Route::post('/events', [MatchController::class, 'recordEvent'])
+                                        ->name('match-events.store');
+
+                                    // One route for five verbs, because they are one machine.
+                                    // Five endpoints would be five places to forget a check.
+                                    // Declared last, and constrained, so it cannot swallow
+                                    // the events route above it.
+                                    Route::post('/{verb}', [MatchController::class, 'transition'])
+                                        ->whereIn('verb', ['start', 'finish', 'cancel', 'postpone', 'reschedule'])
+                                        ->name('matches.transition');
+                                });
 
                             Route::post('/teams', [SquadController::class, 'register'])
                                 ->name('season-teams.store');
