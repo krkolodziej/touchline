@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Auth\DemoController;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\FixtureController;
@@ -26,6 +27,9 @@ Route::middleware('guest')->group(function (): void {
 
     Route::get('/sign-up', [RegistrationController::class, 'create'])->name('sign-up');
     Route::post('/sign-up', [RegistrationController::class, 'store']);
+
+    // A way in without an account, off unless somebody switched it on.
+    Route::post('/demo', [DemoController::class, 'store'])->name('demo');
 });
 
 Route::middleware('auth')->group(function (): void {

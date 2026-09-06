@@ -1,0 +1,66 @@
+# Read only when the service is created as a Blueprint. A plain web service built from the
+# same repository ignores this file entirely and silently, which is worth checking for after
+# the first deploy — see the README.
+services:
+  - type: web
+    name: touchline
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /up
+
+    # Deploy only once the checks are green. CI builds this same Dockerfile and boots the
+    # container, so an image that will not start fails in the pull request and can never
+    # reach production.
+    autoDeployTrigger: checksPass
+
+    envVars:
+      - key: APP_NAME
+        value: Touchline
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_URL
+        sync: false
+
+      # The Neon connection string, under the name Laravel actually reads. Postgres from
+      # Neon rather than a free Render database, because a free Render database is deleted
+      # after thirty days and a free Neon project is not.
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        sync: false
+
+      - key: SESSION_DRIVER
+        value: database
+      - key: SESSION_SECURE_COOKIE
+        value: true
+      - key: CACHE_STORE
+        value: database
+
+      # The queue is a table in the same database, so a job dispatched inside a transaction
+      # is committed or rolled back with it.
+      - key: QUEUE_CONNECTION
+        value: database
+
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: info
+
+      - key: RUN_RELEASE_ON_START
+        value: true
+      - key: RUN_WORKER
+        value: true
+      - key: RUN_SCHEDULER
+        value: true
+
+      # A way in without an account, and the data for it.
+      - key: DEMO_LOGIN_ENABLED
+        value: true
+      - key: SEED_DEMO_ON_START
+        value: true

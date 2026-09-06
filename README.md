@@ -178,7 +178,7 @@ npm run build
 | 5 | Matches, the state machine, goals and cards | ✅ |
 | 6 | Standings, player statistics, demo data | ✅ |
 | 7 | Queued notifications and scheduled reminders | ✅ |
-| 8 | Realtime match updates, hardening, deployment | |
+| 8 | Demo access, conditional requests, deployment | ✅ |
 
 ---
 

@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property-read User $createdBy
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, League> $leagues
  * @property-read \Illuminate\Database\Eloquent\Collection<int, OrganizationMembership> $memberships
  */
 class Organization extends Model
@@ -32,6 +33,12 @@ class Organization extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by_id');
+    }
+
+    /** @return HasMany<League, $this> */
+    public function leagues(): HasMany
+    {
+        return $this->hasMany(League::class);
     }
 
     /** @return HasMany<OrganizationMembership, $this> */

@@ -15,7 +15,21 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'Touchline'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | The "look around" button
+    |--------------------------------------------------------------------------
+    |
+    | Signs a visitor in without a credential, into the seeded demonstration
+    | season. Off here on purpose: a development checkout has whatever data its
+    | owner put in it, and an endpoint that lets somebody in without asking who
+    | they are should be switched on deliberately rather than inherited.
+    |
+    */
+
+    'demo_login_enabled' => (bool) env('DEMO_LOGIN_ENABLED', false),
 
     /*
     |--------------------------------------------------------------------------

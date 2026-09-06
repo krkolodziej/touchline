@@ -16,7 +16,9 @@ class SessionController extends Controller
 {
     public function create(): Response
     {
-        return Inertia::render('auth/SignIn');
+        return Inertia::render('auth/SignIn', [
+            'demo_available' => (bool) config('app.demo_login_enabled'),
+        ]);
     }
 
     public function store(LoginRequest $request): RedirectResponse

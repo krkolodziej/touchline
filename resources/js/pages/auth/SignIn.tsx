@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
 import type { SharedProps } from '@/types'
 
-export default function SignIn() {
+export default function SignIn({ demo_available: demoAvailable }: { demo_available: boolean }) {
   const { errors } = usePage<SharedProps>().props
   const form = useForm({ email: '', password: '' })
+  const demo = useForm({})
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
@@ -60,6 +61,33 @@ export default function SignIn() {
             {form.processing ? 'Signing in…' : 'Sign in'}
           </Button>
         </form>
+
+        {/* The season is why somebody pressed this, so the button lands them in it rather
+            than on a list of organizations they would then have to click through. */}
+        {demoAvailable ? (
+          <>
+            <div className="mt-6 flex items-center gap-3" aria-hidden="true">
+              <span className="h-px flex-1 bg-border" />
+              <span className="text-[11px] uppercase tracking-wide text-foreground-subtle">or</span>
+              <span className="h-px flex-1 bg-border" />
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="mt-4 w-full"
+              disabled={demo.processing}
+              onClick={() => demo.post('/demo')}
+            >
+              {demo.processing ? 'Opening the demo…' : 'Look around a finished season'}
+            </Button>
+
+            <p className="mt-2 text-center text-[12px] text-foreground-muted">
+              Twelve clubs, thirteen rounds played. No account needed.
+            </p>
+          </>
+        ) : null}
       </AuthCard>
     </>
   )

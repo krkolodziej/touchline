@@ -92,3 +92,80 @@ jobs:
       - run: npm run typecheck
       - run: npm run test
       - run: npm run build
+
+  image:
+    name: Production image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: touchline
+          POSTGRES_DB: touchline
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Render builds this exact file, so "does the deployable image even build" belongs in
+      # the pull request rather than in a deploy that fails ten minutes after merging.
+      - name: Build the image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: touchline:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Building is not booting. An image that compiles fine and then dies on its first
+      # request is the failure worth catching, so this actually starts it and asks it things.
+      #
+      # --cap-drop=ALL is stricter than the hosting needs, and deliberately: it is what
+      # catches a binary that will not exec because of file capabilities.
+      - name: Boot it and ask it for something
+        run: |
+          docker run -d --name touchline             --cap-drop=ALL             --network host             -e PORT=8080             -e APP_KEY="base64:$(head -c 32 /dev/urandom | base64)"             -e APP_URL=http://localhost:8080             -e DB_CONNECTION=pgsql             -e DB_URL="postgresql://postgres:touchline@127.0.0.1:5432/touchline"             -e SESSION_DRIVER=database             -e CACHE_STORE=database             -e QUEUE_CONNECTION=database             -e RUN_RELEASE_ON_START=true             -e DEMO_LOGIN_ENABLED=true             touchline:ci
+
+          echo "Waiting for the health check"
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/up > /dev/null 2>&1; then
+              echo "up after ${i}s"
+              break
+            fi
+            if [ "$i" = "60" ]; then
+              echo "never came up"
+              docker logs touchline
+              exit 1
+            fi
+            sleep 1
+          done
+
+          echo "Checking the SPA is served, not just the API"
+          curl -fsS http://localhost:8080/sign-in | grep -q 'id="app"'             || { echo "the sign-in page did not come back with a mount point"; docker logs touchline; exit 1; }
+
+          echo "Checking the assets the SPA asks for are actually there"
+          asset=$(curl -fsS http://localhost:8080/sign-in | grep -oE '/build/assets/app-[^"]+\.js' | head -1)
+          test -n "$asset" || { echo "no hashed asset referenced"; exit 1; }
+          curl -fsS "http://localhost:8080${asset}" > /dev/null             || { echo "the asset it asked for is not being served"; exit 1; }
+
+          echo "Checking migrations actually ran"
+          docker exec touchline php artisan migrate:status | grep -q "Ran"             || { echo "migrations did not run"; docker logs touchline; exit 1; }
+
+      - name: Show the logs if any of that failed
+        if: failure()
+        run: docker logs touchline
+
+      - name: Stop it
+        if: always()
+        run: docker rm -f touchline || true
