@@ -60,8 +60,11 @@ export function SeasonLayout({
 
         <Tabs
           tabs={[
+            { href: `${base}/overview`, label: 'Overview' },
             { href: `${base}/squads`, label: 'Clubs & squads', count: counts.clubs },
             { href: `${base}/fixtures`, label: 'Calendar', count: counts.fixtures },
+            { href: `${base}/table`, label: 'Table' },
+            { href: `${base}/statistics`, label: 'Statistics' },
           ]}
         />
 

@@ -1,4 +1,4 @@
-import { useForm } from '@inertiajs/react'
+import { Link, useForm } from '@inertiajs/react'
 import { Plus } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
@@ -99,7 +99,9 @@ export default function Clubs({
       header: 'Club',
       render: (club) => (
         <div className="min-w-0">
-          <p className="font-medium">{club.name}</p>
+          <Link href={`${base}/${club.id}/profile`} className="font-medium hover:text-primary">
+            {club.name}
+          </Link>
           <p className="truncate text-[12.5px] text-foreground-subtle">{club.slug}</p>
         </div>
       ),

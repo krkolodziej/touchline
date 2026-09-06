@@ -113,6 +113,32 @@ composer stan
 composer cs
 ```
 
+### A league to look at
+
+```bash
+php artisan app:seed:demo
+```
+
+Twelve clubs, full squads, a generated calendar and thirteen of twenty-two rounds already
+played — including one match still in progress, one cancelled and two postponed, so every
+state on every screen has something behind it. Every player has a date of birth and a name
+of their own, and the matches carry cards and substitutions as well as goals, so no column
+anywhere is a row of dashes. The command prints the account it made and a password to sign
+in with.
+
+It is deterministic: the same seed produces the same league on every machine, which is what
+makes the table checkable against the results. It is also idempotent — run it twice and the
+second run does nothing. Pass `--flush` to build it again from scratch.
+
+Three seeded engines rather than one, and the split is the point: results, biography and
+cards each draw from their own. Mt19937 is a sequence, so a new draw anywhere shifts every
+draw after it — widening a list of first names would otherwise silently change every score
+in the league.
+
+Nothing is written straight into the score columns. Every match is started, its goals
+recorded one at a time and then finished, through the same services the application uses, so
+the demonstration exercises the rules rather than going around them.
+
 ```bash
 npm run test
 npm run typecheck
@@ -132,7 +158,7 @@ npm run build
 | 3b | Seasons, squad registration, rosters | ✅ |
 | 4 | Round-robin fixture generation | ✅ |
 | 5 | Matches, the state machine, goals and cards | ✅ |
-| 6 | Standings, player statistics, demo data | |
+| 6 | Standings, player statistics, demo data | ✅ |
 | 7 | Queued notifications and scheduled reminders | |
 | 8 | Realtime match updates, hardening, deployment | |
 

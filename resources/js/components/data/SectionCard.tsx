@@ -32,8 +32,8 @@ export function SectionCard({
   children,
 }: {
   title: string
-  href?: string
-  linkLabel?: string
+  href?: string | undefined
+  linkLabel?: string | undefined
   children: ReactNode
 }) {
   return (

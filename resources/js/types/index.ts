@@ -226,3 +226,64 @@ export interface SquadForMatch {
 export function isLive(fixture: Fixture): boolean {
   return fixture.status === 'LIVE'
 }
+
+export interface StandingRow {
+  position: number
+  team_id: number
+  team_name: string
+  played: number
+  won: number
+  drawn: number
+  lost: number
+  goals_for: number
+  goals_against: number
+  goal_difference: number
+  points: number
+}
+
+export interface PlayerStatisticsRow {
+  player_id: number
+  first_name: string
+  last_name: string
+  team_id: number
+  team_name: string
+  goals: number
+  yellow_cards: number
+  red_cards: number
+}
+
+export interface ClubSeasonRow extends Omit<StandingRow, 'position' | 'team_id' | 'team_name'> {
+  position: number | null
+  season_id: number
+  season_name: string
+  league_id: number
+  league_name: string
+  start_date: string
+  squad_size: number
+}
+
+export interface PlayerSeasonRow {
+  season_id: number
+  season_name: string
+  league_id: number
+  league_name: string
+  team_id: number
+  team_name: string
+  shirt_number: number | null
+  position: PlayerPosition | null
+  captain: boolean
+  goals: number
+  yellow_cards: number
+  red_cards: number
+}
+
+export interface CurrentSquad {
+  season_id: number
+  season_name: string
+  league_id: number
+  team_id: number
+  team_name: string
+  shirt_number: number | null
+  position: PlayerPosition | null
+  captain: boolean
+}

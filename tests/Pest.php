@@ -8,6 +8,7 @@ use App\Models\User;
 use Database\Factories\OrganizationMembershipFactory;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;
 
 pest()->extend(TestCase::class)
@@ -33,4 +34,24 @@ function memberOf(Organization $organization, OrganizationRole $role = Organizat
     ]);
 
     return $user;
+}
+
+/**
+ * Build the demonstration league.
+ *
+ * A helper rather than a bare `artisan()` call so the options are stated once — the password
+ * in particular, which is otherwise generated and printed, and a test that prints a fresh
+ * secret on every run is noise.
+ */
+function seedDemo(bool $flush = false): void
+{
+    $options = ['--owner-password' => 'demo-password'];
+
+    if ($flush) {
+        $options['--flush'] = true;
+    }
+
+    $exitCode = Artisan::call('app:seed:demo', $options);
+
+    expect($exitCode)->toBe(0);
 }

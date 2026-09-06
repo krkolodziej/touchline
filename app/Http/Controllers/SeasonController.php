@@ -61,8 +61,8 @@ class SeasonController extends Controller
     }
 
     /**
-     * A season is one page with tabs, and squads is the first of them: before a calendar or
-     * a table can exist, somebody has to say which clubs are in it.
+     * A season is one page with tabs, and the overview is the front of it: the table, who is
+     * scoring, what is being played now and what is next. It is what somebody came for.
      */
     public function show(
         OrganizationScope $organization,
@@ -71,7 +71,7 @@ class SeasonController extends Controller
     ): RedirectResponse {
         Gate::authorize(Permission::VIEW, $season);
 
-        return redirect()->route('seasons.squads', [
+        return redirect()->route('seasons.overview', [
             $season->organization()->id,
             $season->league()->id,
             $season->season()->id,

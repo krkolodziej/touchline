@@ -10,7 +10,9 @@ use App\Http\Controllers\MatchController;
 use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PlayerController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SeasonController;
+use App\Http\Controllers\SeasonTableController;
 use App\Http\Controllers\SquadController;
 use App\Http\Controllers\TeamController;
 use Illuminate\Support\Facades\Route;
@@ -70,6 +72,14 @@ Route::middleware('auth')->group(function (): void {
                         ->whereNumber('season')
                         ->group(function (): void {
                             Route::get('/', [SeasonController::class, 'show'])->name('seasons.show');
+
+                            Route::get('/overview', [SeasonTableController::class, 'overview'])
+                                ->name('seasons.overview');
+                            Route::get('/table', [SeasonTableController::class, 'table'])
+                                ->name('seasons.table');
+                            Route::get('/statistics', [SeasonTableController::class, 'statistics'])
+                                ->name('seasons.statistics');
+
                             Route::get('/squads', [SquadController::class, 'index'])->name('seasons.squads');
 
                             Route::get('/fixtures', [FixtureController::class, 'index'])
@@ -132,6 +142,13 @@ Route::middleware('auth')->group(function (): void {
                 ->whereNumber('playerId')->name('players.update');
             Route::delete('/players/{playerId}', [PlayerController::class, 'destroy'])
                 ->whereNumber('playerId')->name('players.destroy');
+
+            // A club and a player outlive any one season, so their pages sit beside the
+            // competitions rather than inside one.
+            Route::get('/clubs/{teamId}/profile', [ProfileController::class, 'club'])
+                ->whereNumber('teamId')->name('clubs.profile');
+            Route::get('/players/{playerId}/profile', [ProfileController::class, 'player'])
+                ->whereNumber('playerId')->name('players.profile');
 
             Route::get('/members', [MembershipController::class, 'index'])->name('organizations.members');
             Route::post('/members', [MembershipController::class, 'store'])->name('members.store');

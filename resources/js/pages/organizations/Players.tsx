@@ -1,4 +1,4 @@
-import { useForm } from '@inertiajs/react'
+import { Link, useForm } from '@inertiajs/react'
 import { Plus } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
@@ -105,7 +105,11 @@ export default function Players({
     {
       key: 'name',
       header: 'Player',
-      render: (player) => <span className="font-medium">{player.full_name}</span>,
+      render: (player) => (
+        <Link href={`${base}/${player.id}/profile`} className="font-medium hover:text-primary">
+          {player.full_name}
+        </Link>
+      ),
     },
     {
       key: 'date_of_birth',

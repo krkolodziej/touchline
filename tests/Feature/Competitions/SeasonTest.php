@@ -129,14 +129,14 @@ it('treats a season reached through the wrong league as missing', function (): v
         ->assertOk();
 });
 
-it('sends a season straight to its squads', function (): void {
+it('sends a season straight to its overview', function (): void {
     $cast = Cast::make();
     $league = LeagueFactory::new()->createOne(['organization_id' => $cast->organization->id]);
     $season = SeasonFactory::new()->createOne(['league_id' => $league->id]);
 
     $url = $cast->url("/leagues/{$league->id}/seasons/{$season->id}");
 
-    actingAs($cast->member)->get($url)->assertRedirect($url.'/squads');
+    actingAs($cast->member)->get($url)->assertRedirect($url.'/overview');
 });
 
 it('lets a member read a season and an admin write to it', function (): void {

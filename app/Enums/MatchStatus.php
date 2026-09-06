@@ -38,6 +38,28 @@ enum MatchStatus: string
         return in_array($target, $this->allowedTransitions(), true);
     }
 
+    /**
+     * The statuses whose events count towards a player's tally.
+     *
+     * Deliberately not the same set the table counts. A goal scored ten minutes ago is a
+     * goal, and the scorer list says so straight away — but the three points are not awarded
+     * until full time, because a match that is 2-1 at the hour is not a win yet. The
+     * asymmetry is the point: one is a record of what has happened, the other is a
+     * settlement of what it was worth.
+     *
+     * @return list<self>
+     */
+    public static function countedInStatistics(): array
+    {
+        return [self::Live, self::Finished];
+    }
+
+    /** @return list<string> */
+    public static function countedInStatisticsValues(): array
+    {
+        return array_map(static fn (self $status): string => $status->value, self::countedInStatistics());
+    }
+
     /** @return list<string> */
     public function allowedTransitionValues(): array
     {
