@@ -8,6 +8,7 @@ use App\Http\Controllers\FixtureController;
 use App\Http\Controllers\LeagueController;
 use App\Http\Controllers\MatchController;
 use App\Http\Controllers\MembershipController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PlayerController;
 use App\Http\Controllers\ProfileController;
@@ -29,6 +30,17 @@ Route::middleware('guest')->group(function (): void {
 
 Route::middleware('auth')->group(function (): void {
     Route::post('/sign-out', [SessionController::class, 'destroy'])->name('sign-out');
+
+    // A notification belongs to a person, not to an organization: somebody who runs
+    // three competitions wants one bell, not three.
+    Route::get('/notifications', [NotificationController::class, 'index'])
+        ->name('notifications.index');
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])
+        ->name('notifications.unread-count');
+    Route::post('/notifications/read', [NotificationController::class, 'markAllRead'])
+        ->name('notifications.read-all');
+    Route::post('/notifications/{notificationId}/read', [NotificationController::class, 'markRead'])
+        ->whereNumber('notificationId')->name('notifications.read');
 
     // The dashboard *is* the list of organizations you belong to. A separate landing page
     // above it would be a click between somebody and the only thing they came for.

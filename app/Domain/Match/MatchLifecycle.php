@@ -6,6 +6,7 @@ namespace App\Domain\Match;
 
 use App\Enums\MatchStatus;
 use App\Exceptions\InvalidTransitionException;
+use App\Jobs\MatchFinished;
 use App\Models\Fixture;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -60,6 +61,23 @@ class MatchLifecycle
             $fixture->status = $target;
             $this->applySideEffects($fixture, $target);
             $fixture->save();
+
+            /**
+             * Dispatched inside the transaction, and this is the whole reason the queue lives
+             * in the same database as everything else.
+             *
+             * `dispatch()` on the database driver is an INSERT on this connection, so the job
+             * row is committed with the status change or rolled back with it. There is no
+             * window in which the notification exists and the result does not, and none in
+             * which a rolled-back full time still tells twelve people the match is over.
+             *
+             * A Redis queue could not do this. It would need `afterCommit`, which narrows the
+             * window without closing it — the process can still die between the commit and
+             * the push.
+             */
+            if ($target === MatchStatus::Finished) {
+                MatchFinished::dispatch($fixture->id);
+            }
         });
     }
 

@@ -1,6 +1,7 @@
 import { Link, router, usePage } from '@inertiajs/react'
 
 import { BrandMark } from '@/components/layout/BrandMark'
+import { NotificationBell } from '@/components/layout/NotificationBell'
 import { ThemeToggle } from '@/components/layout/ThemeToggle'
 import { Button } from '@/components/ui/button'
 import { initialsOf } from '@/lib/initials'
@@ -33,6 +34,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             {auth.user ? (
               <>
+                <NotificationBell />
+
                 <span
                   title={auth.user.email}
                   className="grid size-8 place-items-center rounded-full bg-primary-wash text-[12px] font-semibold text-primary"

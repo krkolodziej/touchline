@@ -105,6 +105,24 @@ composer dev
 That starts the application, a queue worker and Vite together. Separately, they are
 `php artisan serve`, `php artisan queue:listen` and `npm run dev`.
 
+The worker is the one that is easy to forget, and nothing complains when it is missing:
+results are recorded, the bell simply never fills, and the jobs wait in the `jobs` table for
+somebody to notice.
+
+### Background work
+
+| | |
+| --- | --- |
+| What is queued | `php artisan queue:monitor database` |
+| What failed | `php artisan queue:failed` |
+| What is scheduled | `php artisan schedule:list` |
+| Run the reminder scan now | `php artisan app:matches:remind` |
+
+Finishing a match queues a notification for the organization's owners and administrators,
+and the scan for matches kicking off in about a day runs every fifteen minutes. Both end up
+in the same database as everything else: the queue is a table, so a job dispatched inside a
+transaction is committed or rolled back with it.
+
 ### Checks
 
 ```bash
@@ -159,7 +177,7 @@ npm run build
 | 4 | Round-robin fixture generation | ✅ |
 | 5 | Matches, the state machine, goals and cards | ✅ |
 | 6 | Standings, player statistics, demo data | ✅ |
-| 7 | Queued notifications and scheduled reminders | |
+| 7 | Queued notifications and scheduled reminders | ✅ |
 | 8 | Realtime match updates, hardening, deployment | |
 
 ---

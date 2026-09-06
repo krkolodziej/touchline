@@ -3,6 +3,9 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    {{-- The notification bell talks to a JSON endpoint with fetch() rather than
+         through Inertia, so it needs the token the way any other form would. --}}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title inertia>{{ config('app.name', 'Touchline') }}</title>
 
     {{-- Resolve the theme before first paint. A provider that only runs after hydration

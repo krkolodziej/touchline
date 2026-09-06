@@ -8,15 +8,12 @@ use Inertia\Testing\AssertableInertia;
 
 use function Pest\Laravel\actingAs;
 
-/**
- * `Kickoff` comes from MatchTest and builds two clubs of three with one fixture between
- * them. Everything here is about which matches count, and for what.
- */
-function seasonUrl(Kickoff $match): string
-{
-    return $match->cast->url("/leagues/{$match->season->league_id}/seasons/{$match->season->id}");
-}
+use Tests\Support\Kickoff;
 
+/**
+ * `Kickoff` builds two clubs of three with one fixture between them. Everything here is
+ * about which matches count, and for what.
+ */
 function scoreIt(Kickoff $match, int $home, int $away): void
 {
     $match->start();
@@ -42,7 +39,7 @@ it('gives three points to the winner and none to the loser', function (): void {
     scoreIt($match, 2, 1);
     actingAs($match->cast->admin)->post("{$match->url}/finish");
 
-    actingAs($match->cast->member)->get(seasonUrl($match).'/table')
+    actingAs($match->cast->member)->get($match->seasonUrl().'/table')
         ->assertInertia(fn (AssertableInertia $page) => $page
             ->component('seasons/Table')
             ->where('standings.0.team_name', 'Stal')
@@ -57,7 +54,7 @@ it('gives both clubs a point for a draw', function (): void {
     scoreIt($match, 1, 1);
     actingAs($match->cast->admin)->post("{$match->url}/finish");
 
-    actingAs($match->cast->member)->get(seasonUrl($match).'/table')
+    actingAs($match->cast->member)->get($match->seasonUrl().'/table')
         ->assertInertia(fn (AssertableInertia $page) => $page
             ->where('standings.0.points', 1)
             ->where('standings.1.points', 1)
@@ -74,7 +71,7 @@ it('counts a live match towards the scorers but not towards the table', function
     $match = Kickoff::make();
     scoreIt($match, 2, 0);
 
-    $url = seasonUrl($match);
+    $url = $match->seasonUrl();
 
     actingAs($match->cast->member)->get("{$url}/table")
         ->assertInertia(fn (AssertableInertia $page) => $page
@@ -102,7 +99,7 @@ it('counts a cancelled match towards neither', function (): void {
 
     expect($match->fixture->fresh()?->status)->toBe(MatchStatus::Cancelled);
 
-    $url = seasonUrl($match);
+    $url = $match->seasonUrl();
 
     actingAs($match->cast->member)->get("{$url}/table")
         ->assertInertia(fn (AssertableInertia $page) => $page->where('standings.0.played', 0));
@@ -115,7 +112,7 @@ it('counts a cancelled match towards neither', function (): void {
 it('lists every registered club in the table', function (): void {
     $match = Kickoff::make();
 
-    actingAs($match->cast->member)->get(seasonUrl($match).'/table')
+    actingAs($match->cast->member)->get($match->seasonUrl().'/table')
         ->assertInertia(fn (AssertableInertia $page) => $page
             ->has('standings', 2)
             ->where('standings.0.played', 0)
@@ -135,7 +132,7 @@ it('keeps cards out of the goal column and counts them separately', function ():
         ]);
     }
 
-    actingAs($match->cast->member)->get(seasonUrl($match).'/statistics')
+    actingAs($match->cast->member)->get($match->seasonUrl().'/statistics')
         ->assertInertia(fn (AssertableInertia $page) => $page
             ->where('players.0.goals', 1)
             ->where('players.0.yellow_cards', 2)
@@ -153,7 +150,7 @@ it('leaves a player who has done nothing off the statistics', function (): void 
     ]);
 
     // Six players in the two squads; one of them has done something.
-    actingAs($match->cast->member)->get(seasonUrl($match).'/statistics')
+    actingAs($match->cast->member)->get($match->seasonUrl().'/statistics')
         ->assertInertia(fn (AssertableInertia $page) => $page->has('players', 1));
 });
 
@@ -172,7 +169,7 @@ it('puts the leading scorer first', function (): void {
         }
     }
 
-    actingAs($match->cast->member)->get(seasonUrl($match).'/statistics')
+    actingAs($match->cast->member)->get($match->seasonUrl().'/statistics')
         ->assertInertia(fn (AssertableInertia $page) => $page
             ->where('players.0.goals', 3)
             ->where('players.0.player_id', $squad[0]->id)
@@ -184,7 +181,7 @@ it('sums the season on the overview', function (): void {
     scoreIt($match, 2, 1);
     actingAs($match->cast->admin)->post("{$match->url}/finish");
 
-    actingAs($match->cast->member)->get(seasonUrl($match).'/overview')
+    actingAs($match->cast->member)->get($match->seasonUrl().'/overview')
         ->assertInertia(fn (AssertableInertia $page) => $page
             ->component('seasons/Overview')
             ->where('summary.clubs', 2)
@@ -197,7 +194,7 @@ it('sums the season on the overview', function (): void {
 it('shows what is being played now on the overview', function (): void {
     $match = Kickoff::make()->start();
 
-    actingAs($match->cast->member)->get(seasonUrl($match).'/overview')
+    actingAs($match->cast->member)->get($match->seasonUrl().'/overview')
         ->assertInertia(fn (AssertableInertia $page) => $page
             ->has('live', 1)
             ->has('upcoming', 0));
@@ -205,7 +202,7 @@ it('shows what is being played now on the overview', function (): void {
 
 it('sends a season to its overview', function (): void {
     $match = Kickoff::make();
-    $url = seasonUrl($match);
+    $url = $match->seasonUrl();
 
     actingAs($match->cast->member)->get($url)->assertRedirect($url.'/overview');
 });
@@ -266,7 +263,7 @@ it('cannot read a profile in another organization', function (): void {
 
 it('keeps a stranger out of the table and the statistics', function (): void {
     $match = Kickoff::make();
-    $url = seasonUrl($match);
+    $url = $match->seasonUrl();
 
     actingAs($match->cast->stranger)->get("{$url}/table")->assertNotFound();
     actingAs($match->cast->stranger)->get("{$url}/statistics")->assertNotFound();
@@ -282,7 +279,7 @@ it('reconciles the table against the matches it was built from', function (): vo
     scoreIt($match, 3, 2);
     actingAs($match->cast->admin)->post("{$match->url}/finish");
 
-    $response = actingAs($match->cast->member)->get(seasonUrl($match).'/table');
+    $response = actingAs($match->cast->member)->get($match->seasonUrl().'/table');
     /** @var array<string, mixed> $page */
     $page = $response->viewData('page');
     /** @var list<array<string, mixed>> $standings */
