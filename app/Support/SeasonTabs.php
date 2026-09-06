@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support;
 
 use App\Http\Resources\SeasonResource;
+use App\Models\Fixture;
 use App\Models\SeasonTeam;
 use App\Support\Scope\SeasonScope;
 
@@ -25,6 +26,10 @@ class SeasonTabs
             ->where('season_id', $scope->season()->id)
             ->count();
 
+        $fixtureCount = Fixture::query()
+            ->where('season_id', $scope->season()->id)
+            ->count();
+
         return [
             'organization' => [
                 'id' => $scope->organization()->id,
@@ -35,7 +40,7 @@ class SeasonTabs
                 'name' => $scope->league()->name,
             ],
             'season' => (new SeasonResource($scope->season(), $clubCount))->resolve(),
-            'counts' => ['clubs' => $clubCount],
+            'counts' => ['clubs' => $clubCount, 'fixtures' => $fixtureCount],
             'can_manage' => $scope->role()->canManage(),
         ];
     }

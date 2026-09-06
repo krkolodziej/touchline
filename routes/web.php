@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Auth\SessionController;
+use App\Http\Controllers\FixtureController;
 use App\Http\Controllers\LeagueController;
 use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\OrganizationController;
@@ -69,6 +70,13 @@ Route::middleware('auth')->group(function (): void {
                         ->group(function (): void {
                             Route::get('/', [SeasonController::class, 'show'])->name('seasons.show');
                             Route::get('/squads', [SquadController::class, 'index'])->name('seasons.squads');
+
+                            Route::get('/fixtures', [FixtureController::class, 'index'])
+                                ->name('seasons.fixtures');
+                            Route::post('/fixtures/generate', [FixtureController::class, 'generate'])
+                                ->name('fixtures.generate');
+                            Route::delete('/fixtures', [FixtureController::class, 'clear'])
+                                ->name('fixtures.clear');
 
                             Route::post('/teams', [SquadController::class, 'register'])
                                 ->name('season-teams.store');

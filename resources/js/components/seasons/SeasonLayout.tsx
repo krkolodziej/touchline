@@ -58,7 +58,12 @@ export function SeasonLayout({
           }
         />
 
-        <Tabs tabs={[{ href: `${base}/squads`, label: 'Clubs & squads', count: counts.clubs }]} />
+        <Tabs
+          tabs={[
+            { href: `${base}/squads`, label: 'Clubs & squads', count: counts.clubs },
+            { href: `${base}/fixtures`, label: 'Calendar', count: counts.fixtures },
+          ]}
+        />
 
         <div className="pt-2">{children}</div>
       </div>

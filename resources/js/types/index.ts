@@ -167,6 +167,29 @@ export interface SeasonTabProps {
   organization: NamedRef
   league: NamedRef
   season: Season
-  counts: { clubs: number }
+  counts: { clubs: number; fixtures: number }
   can_manage: boolean
+}
+
+export type MatchStatus = 'SCHEDULED' | 'LIVE' | 'FINISHED' | 'CANCELLED' | 'POSTPONED'
+
+export interface Fixture {
+  id: number
+  season_id: number
+  round_number: number
+  leg: number
+  home_team_id: number
+  home_team_name: string
+  home_team_short_name: string
+  away_team_id: number
+  away_team_name: string
+  away_team_short_name: string
+  kick_off_at: string | null
+  status: MatchStatus
+  home_score: number
+  away_score: number
+  started_at: string | null
+  finished_at: string | null
+  /** What the server would accept right now. The client keeps no copy of the rules. */
+  allowed_transitions: MatchStatus[]
 }

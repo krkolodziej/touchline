@@ -130,7 +130,7 @@ npm run build
 | 2 | Organizations and per-organization roles | ✅ |
 | 3a | Leagues, clubs, players, and the list machinery | ✅ |
 | 3b | Seasons, squad registration, rosters | ✅ |
-| 4 | Round-robin fixture generation | |
+| 4 | Round-robin fixture generation | ✅ |
 | 5 | Matches, the state machine, goals and cards | |
 | 6 | Standings, player statistics, demo data | |
 | 7 | Queued notifications and scheduled reminders | |
