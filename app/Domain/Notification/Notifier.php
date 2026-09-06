@@ -9,7 +9,6 @@ use App\Models\Notification;
 use App\Models\Organization;
 use App\Models\OrganizationMembership;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Delivering a notification once, however many times the job runs.
@@ -78,7 +77,9 @@ class Notifier
             return 0;
         }
 
-        DB::transaction(fn () => Notification::query()->insert($rows));
+        // One statement, so no transaction around it. Every nested transaction is a
+        // savepoint, and a run that opens thousands of them makes PostgreSQL crawl.
+        Notification::query()->insert($rows);
 
         return count($rows);
     }

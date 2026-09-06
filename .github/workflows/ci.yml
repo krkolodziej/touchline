@@ -14,6 +14,8 @@ jobs:
   backend:
     name: API
     runs-on: ubuntu-latest
+    # A hung suite should fail in minutes, not burn an hour of somebody's quota.
+    timeout-minutes: 15
 
     services:
       postgres:
@@ -64,14 +66,17 @@ jobs:
       - run: composer cs
       - run: composer stan
 
+      # --profile prints the ten slowest tests. A suite that quietly gets slower is a
+      # suite people stop running, and the number is only visible if something prints it.
       - name: Run the test suite
         env:
           DB_PASSWORD: touchline
-        run: vendor/bin/pest
+        run: vendor/bin/pest --profile
 
   frontend:
     name: SPA
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - uses: actions/checkout@v4

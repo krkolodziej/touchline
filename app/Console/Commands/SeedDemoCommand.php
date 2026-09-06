@@ -166,7 +166,18 @@ class SeedDemoCommand extends Command
             return true;
         });
 
-        $this->playRounds($season, $squads, $lifecycle, $recorder);
+        // Replaying a season is not news. Finishing a match queues a notification, and
+        // seventy-four of them dated "just now" would be a bell full of history nobody was
+        // waiting for — as well as seventy-four jobs of pure overhead on every container
+        // start. The queue goes quiet for the replay and comes back for anything real.
+        $queue = config('queue.default');
+        config(['queue.default' => 'null']);
+
+        try {
+            $this->playRounds($season, $squads, $lifecycle, $recorder);
+        } finally {
+            config(['queue.default' => $queue]);
+        }
 
         $this->newLine();
         $this->components->info(sprintf('Sign in as %s with the password %s', $this->ownerEmail(), $password));
