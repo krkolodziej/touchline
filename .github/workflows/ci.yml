@@ -133,31 +133,46 @@ jobs:
       #
       # --cap-drop=ALL is stricter than the hosting needs, and deliberately: it is what
       # catches a binary that will not exec because of file capabilities.
+      # Building is not booting. An image that compiles fine and then dies on its first
+      # request is the failure worth catching, so this actually starts it and asks it things.
+      #
+      # --cap-drop=ALL is stricter than the hosting needs, and deliberately: it is what
+      # catches a binary that will not exec because of file capabilities.
+      #
+      # 127.0.0.1 rather than localhost throughout, because localhost can resolve to ::1
+      # first and then a server listening only on IPv4 looks like a server that is not there.
       - name: Boot it and ask it for something
         run: |
-          docker run -d --name touchline             --cap-drop=ALL             --network host             -e PORT=8080             -e APP_KEY="base64:$(head -c 32 /dev/urandom | base64)"             -e APP_URL=http://localhost:8080             -e DB_CONNECTION=pgsql             -e DB_URL="postgresql://postgres:touchline@127.0.0.1:5432/touchline"             -e SESSION_DRIVER=database             -e CACHE_STORE=database             -e QUEUE_CONNECTION=database             -e RUN_RELEASE_ON_START=true             -e DEMO_LOGIN_ENABLED=true             touchline:ci
+          docker run -d --name touchline             --cap-drop=ALL             --network host             -e PORT=8080             -e APP_KEY="base64:$(head -c 32 /dev/urandom | base64)"             -e APP_URL=http://127.0.0.1:8080             -e DB_CONNECTION=pgsql             -e DB_URL="postgresql://postgres:touchline@127.0.0.1:5432/touchline"             -e SESSION_DRIVER=database             -e CACHE_STORE=database             -e QUEUE_CONNECTION=database             -e RUN_RELEASE_ON_START=true             -e DEMO_LOGIN_ENABLED=true             touchline:ci
 
           echo "Waiting for the health check"
           for i in $(seq 1 60); do
-            if curl -fsS http://localhost:8080/up > /dev/null 2>&1; then
+            code=$(curl -sS -o /tmp/health -w '%{http_code}' http://127.0.0.1:8080/up || echo 000)
+
+            if [ "$code" = "200" ]; then
               echo "up after ${i}s"
               break
             fi
+
             if [ "$i" = "60" ]; then
-              echo "never came up"
+              echo "never came up; last status was ${code} and the body was:"
+              cat /tmp/health || true
+              echo
               docker logs touchline
               exit 1
             fi
+
             sleep 1
           done
 
           echo "Checking the SPA is served, not just the API"
-          curl -fsS http://localhost:8080/sign-in | grep -q 'id="app"'             || { echo "the sign-in page did not come back with a mount point"; docker logs touchline; exit 1; }
+          curl -fsS http://127.0.0.1:8080/sign-in > /tmp/signin             || { echo "the sign-in page did not come back"; docker logs touchline; exit 1; }
+          grep -q 'id="app"' /tmp/signin             || { echo "no mount point on the sign-in page"; head -c 2000 /tmp/signin; exit 1; }
 
           echo "Checking the assets the SPA asks for are actually there"
-          asset=$(curl -fsS http://localhost:8080/sign-in | grep -oE '/build/assets/app-[^"]+\.js' | head -1)
-          test -n "$asset" || { echo "no hashed asset referenced"; exit 1; }
-          curl -fsS "http://localhost:8080${asset}" > /dev/null             || { echo "the asset it asked for is not being served"; exit 1; }
+          asset=$(grep -oE '/build/assets/app-[^"]+\.js' /tmp/signin | head -1)
+          test -n "$asset" || { echo "no hashed asset referenced"; head -c 2000 /tmp/signin; exit 1; }
+          curl -fsS "http://127.0.0.1:8080${asset}" > /dev/null             || { echo "the asset it asked for is not being served"; exit 1; }
 
           echo "Checking migrations actually ran"
           docker exec touchline php artisan migrate:status | grep -q "Ran"             || { echo "migrations did not run"; docker logs touchline; exit 1; }
