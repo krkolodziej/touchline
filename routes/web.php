@@ -8,6 +8,8 @@ use App\Http\Controllers\LeagueController;
 use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PlayerController;
+use App\Http\Controllers\SeasonController;
+use App\Http\Controllers\SquadController;
 use App\Http\Controllers\TeamController;
 use Illuminate\Support\Facades\Route;
 
@@ -50,6 +52,42 @@ Route::middleware('auth')->group(function (): void {
                 ->whereNumber('leagueId')->name('leagues.update');
             Route::delete('/leagues/{leagueId}', [LeagueController::class, 'destroy'])
                 ->whereNumber('leagueId')->name('leagues.destroy');
+
+            // Everything under one league. `{league}`, `{season}` and `{seasonTeam}` are
+            // bound to scopes that each prove the level above them, so a season reached
+            // through the wrong league is as absent as one that never existed.
+            Route::prefix('/leagues/{league}')
+                ->whereNumber('league')
+                ->group(function (): void {
+                    Route::get('/', [SeasonController::class, 'index'])->name('leagues.show');
+                    Route::post('/seasons', [SeasonController::class, 'store'])->name('seasons.store');
+                    Route::delete('/seasons/{seasonId}', [SeasonController::class, 'destroy'])
+                        ->whereNumber('seasonId')->name('seasons.destroy');
+
+                    Route::prefix('/seasons/{season}')
+                        ->whereNumber('season')
+                        ->group(function (): void {
+                            Route::get('/', [SeasonController::class, 'show'])->name('seasons.show');
+                            Route::get('/squads', [SquadController::class, 'index'])->name('seasons.squads');
+
+                            Route::post('/teams', [SquadController::class, 'register'])
+                                ->name('season-teams.store');
+
+                            Route::prefix('/teams/{seasonTeam}')
+                                ->whereNumber('seasonTeam')
+                                ->group(function (): void {
+                                    Route::delete('/', [SquadController::class, 'withdraw'])
+                                        ->name('season-teams.destroy');
+
+                                    Route::post('/roster', [SquadController::class, 'addToSquad'])
+                                        ->name('roster.store');
+                                    Route::patch('/roster/{rosterEntryId}', [SquadController::class, 'updateEntry'])
+                                        ->whereNumber('rosterEntryId')->name('roster.update');
+                                    Route::delete('/roster/{rosterEntryId}', [SquadController::class, 'removeEntry'])
+                                        ->whereNumber('rosterEntryId')->name('roster.destroy');
+                                });
+                        });
+                });
 
             Route::get('/clubs', [TeamController::class, 'index'])->name('organizations.clubs');
             Route::post('/clubs', [TeamController::class, 'store'])->name('teams.store');

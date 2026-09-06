@@ -1,4 +1,4 @@
-import { useForm } from '@inertiajs/react'
+import { Link, useForm } from '@inertiajs/react'
 import { Plus } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
@@ -98,7 +98,9 @@ export default function Leagues({
       header: 'League',
       render: (league) => (
         <div className="min-w-0">
-          <p className="font-medium">{league.name}</p>
+          <Link href={`${base}/${league.id}`} className="font-medium hover:text-primary">
+            {league.name}
+          </Link>
           <p className="truncate text-[12.5px] text-foreground-subtle">{league.slug}</p>
         </div>
       ),

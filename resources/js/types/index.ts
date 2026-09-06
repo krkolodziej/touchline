@@ -128,3 +128,45 @@ export interface OrganizationTabProps {
   can_manage: boolean
   can_delete: boolean
 }
+
+export interface Season {
+  id: number
+  league_id: number
+  name: string
+  start_date: string
+  end_date: string | null
+  created_at: string
+  club_count: number
+}
+
+export interface SeasonTeam {
+  id: number
+  season_id: number
+  team_id: number
+  team_name: string
+  team_short_name: string
+  squad_size: number
+}
+
+export interface RosterEntry {
+  id: number
+  season_team_id: number
+  player_id: number
+  player_name: string
+  shirt_number: number | null
+  position: PlayerPosition | null
+  captain: boolean
+}
+
+export interface NamedRef {
+  id: number
+  name: string
+}
+
+export interface SeasonTabProps {
+  organization: NamedRef
+  league: NamedRef
+  season: Season
+  counts: { clubs: number }
+  can_manage: boolean
+}
