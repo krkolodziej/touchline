@@ -58,6 +58,21 @@ COPY --from=frontend /build/public/build ./public/build
 # This also runs post-autoload-dump, which is what discovers the packages.
 RUN composer dump-autoload --no-dev --no-interaction --classmap-authoritative
 
+# The storage tree, created explicitly rather than trusted to arrive with the source.
+#
+# Those directories are in the repository only because of `.gitignore` placeholders, which is
+# a thin thread to hang a running application on — and a missing storage/logs turns the first
+# thing that tries to write a log into a five hundred on every request, with the reason
+# unreachable because writing the reason is what failed.
+#
+# Before the caches below, so they have somewhere to write.
+RUN mkdir -p storage/app/public \
+        storage/framework/cache/data \
+        storage/framework/sessions \
+        storage/framework/views \
+        storage/logs \
+        bootstrap/cache
+
 # Routes and views are compiled at build time so the first request after a cold start is not
 # the one that pays for it.
 #
@@ -71,7 +86,9 @@ RUN APP_KEY="base64:$(head -c 32 /dev/urandom | base64)" \
     DB_CONNECTION=pgsql DB_HOST=127.0.0.1 DB_DATABASE=build DB_USERNAME=build DB_PASSWORD=build \
     sh -c 'php artisan route:cache && php artisan view:cache'
 
-RUN chown -R www-data:www-data storage bootstrap/cache
+# After the caches, so the files they left behind belong to whoever ends up reading them.
+RUN chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R ug+rwX storage bootstrap/cache
 
 COPY docker-entrypoint.sh /usr/local/bin/touchline-entrypoint
 RUN chmod +x /usr/local/bin/touchline-entrypoint

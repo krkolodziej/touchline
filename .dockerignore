@@ -1,4 +1,9 @@
 # Anything the build makes for itself, and anything that must never be baked in.
+#
+# Note the patterns under storage/: they exclude the *contents* and keep the `.gitignore`
+# placeholders, because those placeholders are the only thing that puts the directories in
+# the image at all. Excluding them leaves Laravel with nowhere to write its log, and the
+# first thing that tries to log then turns every request into a 500.
 .git
 .github
 .env
@@ -9,10 +14,11 @@ vendor
 public/build
 public/hot
 public/storage
-storage/logs/*
-storage/framework/cache/data/*
+storage/logs/*.log
+storage/framework/cache/data/**/*
 storage/framework/sessions/*
-storage/framework/views/*
+!storage/framework/sessions/.gitignore
+storage/framework/views/*.php
 tests
 phpunit.xml
 phpstan.neon
