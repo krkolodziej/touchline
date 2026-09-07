@@ -14,6 +14,12 @@ vendor
 public/build
 public/hot
 public/storage
+# Never ship a cache built on somebody's laptop. The route cache in particular is full of
+# absolute paths from the machine that made it, and the package manifest lists the dev
+# dependencies that machine had — neither of which exists in the image. The build makes
+# its own.
+bootstrap/cache/*.php
+
 storage/logs/*.log
 storage/framework/cache/data/**/*
 storage/framework/sessions/*

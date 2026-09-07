@@ -155,10 +155,11 @@ jobs:
             fi
 
             if [ "$i" = "60" ]; then
-              echo "never came up; last status was ${code} and the body was:"
-              cat /tmp/health || true
-              echo
+              echo "never came up; last status was ${code}"
+              echo "--- what the container said ---"
               docker logs touchline
+              echo "--- what Laravel wrote down ---"
+              docker exec touchline sh -c 'cat storage/logs/*.log 2>/dev/null | tail -80' || true
               exit 1
             fi
 
