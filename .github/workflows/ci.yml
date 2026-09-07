@@ -156,6 +156,8 @@ jobs:
 
             if [ "$i" = "60" ]; then
               echo "never came up; last status was ${code}"
+              echo "--- what it said ---"
+              sed -e 's/<[^>]*>//g' /tmp/health | grep -vE '^\s*$' | head -60
               echo "--- what the container said ---"
               docker logs touchline
               echo "--- what Laravel wrote down ---"
