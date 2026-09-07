@@ -156,12 +156,34 @@ jobs:
 
             if [ "$i" = "60" ]; then
               echo "never came up; last status was ${code}"
-              echo "--- what it said ---"
-              sed -e 's/<[^>]*>//g' /tmp/health | grep -vE '^\s*$' | head -60
+
               echo "--- what the container said ---"
               docker logs touchline
+
               echo "--- what Laravel wrote down ---"
-              docker exec touchline sh -c 'cat storage/logs/*.log 2>/dev/null | tail -80' || true
+              docker exec touchline sh -c 'cat storage/logs/*.log 2>/dev/null | tail -60' || true
+
+              # The console boots fine, since the migrations ran — so whatever is wrong is on
+              # the HTTP path. Driving the front controller by hand gets the real exception
+              # out, rather than the generic page the handler falls back to.
+              echo "--- driving the front controller by hand ---"
+              docker exec touchline php -d display_errors=1 -r '
+                $_SERVER["REQUEST_URI"] = "/up";
+                $_SERVER["REQUEST_METHOD"] = "GET";
+                $_SERVER["HTTP_HOST"] = "127.0.0.1";
+                $_SERVER["SCRIPT_NAME"] = "/index.php";
+                try {
+                    require "/app/public/index.php";
+                } catch (Throwable $e) {
+                    echo get_class($e), ": ", $e->getMessage(), PHP_EOL;
+                    echo $e->getFile(), ":", $e->getLine(), PHP_EOL;
+                    echo $e->getTraceAsString(), PHP_EOL;
+                }
+              ' 2>&1 | head -40 || true
+
+              echo "--- what it thinks it is ---"
+              docker exec touchline php artisan about --only=environment,drivers 2>&1 | head -30 || true
+
               exit 1
             fi
 
