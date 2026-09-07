@@ -15,7 +15,9 @@ that have to be kept in step.
 
 ## Status
 
-Built in stages. See the [stage index](#stages) below for what is in and what is next.
+Built in nine stages, all of them in — see the [stage index](#stages). The one thing the
+original has and this does not is live push over Mercure; the match page polls instead, which
+[Deployment](#deployment) explains.
 
 ---
 
@@ -162,6 +164,61 @@ npm run test
 npm run typecheck
 npm run build
 ```
+
+---
+
+## Deployment
+
+`render.yaml` describes the whole thing, so a deploy is a blueprint pointed at this repository
+rather than a list of settings somebody has to remember. The database is Neon, in the same
+region as the instance.
+
+One image serves both halves. The SPA is built in a Node stage and its hashed assets are
+copied into a FrankenPHP runtime, where Caddy serves them off disk and everything it cannot
+find falls through to Laravel. That is not tidiness: the session is a cookie, so one origin
+means no CORS negotiation, no second service to keep awake, and no chance of the two halves
+being deployed at different versions.
+
+What has to be set by hand — everything else `render.yaml` either fills in or generates:
+
+| | |
+| --- | --- |
+| `DB_URL` | The Neon connection string. The pooled one, since a free instance opens more connections than the direct endpoint likes |
+| `APP_URL` | The address the instance ends up at, which is not known until it exists |
+
+The rest is worth reading for what it says about the plan rather than the application.
+Migrations run from the entrypoint rather than a pre-deploy hook, because hooks are a paid
+feature; the queue worker and the scheduler run in the same container for the same reason.
+The worker is bounded with `--max-time` and brought back by a loop, so a new deploy is picked
+up without anybody restarting anything. An honest limitation follows: a free instance sleeps
+after fifteen quiet minutes, and the worker sleeps with it, so a reminder due during a quiet
+spell arrives when somebody next wakes the site.
+
+The container runs as `www-data`, not as root. That is not caution for its own sake — running
+as root is actively broken under a dropped-capability runtime, because what lets root ignore
+file permissions is `CAP_DAC_OVERRIDE`, and without it root cannot write to `storage/`
+either. CI starts the image with `--cap-drop=ALL` on every push for exactly that reason.
+
+Config is deliberately never cached. A cached config freezes whatever the environment held
+when it was built, and at build time that is a throwaway key and a database that does not
+exist. Routes and views are cached, so the first request after a cold start is not the one
+that pays for it.
+
+### A way in without an account
+
+With `DEMO_LOGIN_ENABLED=true` the sign-in page grows one more button, which signs the
+visitor in as an administrator of the seeded league. An administrator can do everything worth
+showing — start a match, record a goal, register a club — and cannot delete the organization,
+which is the one thing reserved for its owner. With the switch off the route is not forbidden
+but absent: a 404, and no button.
+
+### What is not here
+
+Kickoff pushes live match updates over Mercure. Touchline reloads the match page every three
+seconds instead, through an Inertia partial reload that fetches only the fixture and its
+events — and, since stage 8, one that usually answers `304 Not Modified` with no body at all,
+because the response carries an ETag computed from its own bytes. That is the one deliberate
+gap against the original.
 
 ---
 
