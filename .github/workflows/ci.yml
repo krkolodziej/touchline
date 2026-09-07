@@ -131,19 +131,29 @@ jobs:
       # Building is not booting. An image that compiles fine and then dies on its first
       # request is the failure worth catching, so this actually starts it and asks it things.
       #
-      # --cap-drop=ALL is stricter than the hosting needs, and deliberately: it is what
-      # catches a binary that will not exec because of file capabilities.
-      # Building is not booting. An image that compiles fine and then dies on its first
-      # request is the failure worth catching, so this actually starts it and asks it things.
-      #
-      # --cap-drop=ALL is stricter than the hosting needs, and deliberately: it is what
-      # catches a binary that will not exec because of file capabilities.
+      # --cap-drop=ALL is stricter than the hosting needs, and deliberately. It caught two
+      # things already: a binary that would not exec because of file capabilities, and a root
+      # that could not write to its own storage directory, because what lets root ignore file
+      # permissions is a capability like any other.
       #
       # 127.0.0.1 rather than localhost throughout, because localhost can resolve to ::1
       # first and then a server listening only on IPv4 looks like a server that is not there.
       - name: Boot it and ask it for something
         run: |
-          docker run -d --name touchline             --cap-drop=ALL             --network host             -e PORT=8080             -e APP_KEY="base64:$(head -c 32 /dev/urandom | base64)"             -e APP_URL=http://127.0.0.1:8080             -e DB_CONNECTION=pgsql             -e DB_URL="postgresql://postgres:touchline@127.0.0.1:5432/touchline"             -e SESSION_DRIVER=database             -e CACHE_STORE=database             -e QUEUE_CONNECTION=database             -e RUN_RELEASE_ON_START=true             -e DEMO_LOGIN_ENABLED=true             touchline:ci
+          docker run -d --name touchline \
+            --cap-drop=ALL \
+            --network host \
+            -e PORT=8080 \
+            -e APP_KEY="base64:$(head -c 32 /dev/urandom | base64)" \
+            -e APP_URL=http://127.0.0.1:8080 \
+            -e DB_CONNECTION=pgsql \
+            -e DB_URL="postgresql://postgres:touchline@127.0.0.1:5432/touchline" \
+            -e SESSION_DRIVER=database \
+            -e CACHE_STORE=database \
+            -e QUEUE_CONNECTION=database \
+            -e RUN_RELEASE_ON_START=true \
+            -e DEMO_LOGIN_ENABLED=true \
+            touchline:ci
 
           echo "Waiting for the health check"
           for i in $(seq 1 60); do
@@ -162,27 +172,6 @@ jobs:
 
               echo "--- what Laravel wrote down ---"
               docker exec touchline sh -c 'cat storage/logs/*.log 2>/dev/null | tail -60' || true
-
-              # The console boots fine, since the migrations ran — so whatever is wrong is on
-              # the HTTP path. Driving the front controller by hand gets the real exception
-              # out, rather than the generic page the handler falls back to.
-              echo "--- driving the front controller by hand ---"
-              docker exec touchline php -d display_errors=1 -r '
-                $_SERVER["REQUEST_URI"] = "/up";
-                $_SERVER["REQUEST_METHOD"] = "GET";
-                $_SERVER["HTTP_HOST"] = "127.0.0.1";
-                $_SERVER["SCRIPT_NAME"] = "/index.php";
-                try {
-                    require "/app/public/index.php";
-                } catch (Throwable $e) {
-                    echo get_class($e), ": ", $e->getMessage(), PHP_EOL;
-                    echo $e->getFile(), ":", $e->getLine(), PHP_EOL;
-                    echo $e->getTraceAsString(), PHP_EOL;
-                }
-              ' 2>&1 | head -40 || true
-
-              echo "--- what it thinks it is ---"
-              docker exec touchline php artisan about --only=environment,drivers 2>&1 | head -30 || true
 
               exit 1
             fi

@@ -86,13 +86,28 @@ RUN APP_KEY="base64:$(head -c 32 /dev/urandom | base64)" \
     DB_CONNECTION=pgsql DB_HOST=127.0.0.1 DB_DATABASE=build DB_USERNAME=build DB_PASSWORD=build \
     sh -c 'php artisan route:cache && php artisan view:cache'
 
-# After the caches, so the files they left behind belong to whoever ends up reading them.
-RUN chown -R www-data:www-data storage bootstrap/cache \
+# After the caches, so the files they left behind belong to whoever ends up running.
+#
+# /data and /config come with the base image and are where Caddy keeps its own state.
+RUN chown -R www-data:www-data storage bootstrap/cache /data /config \
     && chmod -R ug+rwX storage bootstrap/cache
 
 COPY docker-entrypoint.sh /usr/local/bin/touchline-entrypoint
 RUN chmod +x /usr/local/bin/touchline-entrypoint
 
 EXPOSE 8080
+
+# Not root.
+#
+# This is not belt-and-braces: running as root here is actively broken. A container started
+# with no capabilities has a root that cannot write to storage/ either, because what lets root
+# ignore file permissions is CAP_DAC_OVERRIDE, and dropping every capability drops that one
+# too. Root then gets judged by the "other" bits like anybody else — and the first thing to
+# notice is the logger, which fails to open the log, and then fails to log *that*, so every
+# request is a five hundred with an empty log file beside it.
+#
+# Being the user who owns the files sidesteps the whole question. Nothing binds below 1024,
+# so there is nothing root was needed for.
+USER www-data
 
 ENTRYPOINT ["touchline-entrypoint"]
