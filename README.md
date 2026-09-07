@@ -15,6 +15,10 @@ that have to be kept in step.
 
 ## Status
 
+**Live:** <https://touchline-30wa.onrender.com> — the demonstration league, no account needed;
+the sign-in page has a button for it. The first load after a quiet spell takes up to a minute,
+because a free instance sleeps and has to be woken.
+
 Built in nine stages, all of them in — see the [stage index](#stages). The one thing the
 original has and this does not is live push over Mercure; the match page polls instead, which
 [Deployment](#deployment) explains.
@@ -179,12 +183,13 @@ find falls through to Laravel. That is not tidiness: the session is a cookie, so
 means no CORS negotiation, no second service to keep awake, and no chance of the two halves
 being deployed at different versions.
 
-What has to be set by hand — everything else `render.yaml` either fills in or generates:
+Three values have to be set by hand; everything else `render.yaml` fills in:
 
 | | |
 | --- | --- |
-| `DB_URL` | The Neon connection string. The pooled one, since a free instance opens more connections than the direct endpoint likes |
-| `APP_URL` | The address the instance ends up at, which is not known until it exists |
+| `DB_URL` | The Neon connection string — the **direct** endpoint, not the pooled one. Neon's pooler is PgBouncer in transaction mode, and the first migration on an empty database dies there: every statement comes back "current transaction is aborted", the first one included, which means the connection it was handed was already inside a failed transaction |
+| `APP_KEY` | `php artisan key:generate --show`. Render's own `generateValue` cannot be used: Laravel's cipher wants exactly thirty-two bytes, base64-encoded and prefixed, and a random string of some other length boots fine and then answers five hundred to everything |
+| `APP_URL` | The address the instance ends up at, which is not known until it exists — Render appends a suffix if the name is taken |
 
 The rest is worth reading for what it says about the plan rather than the application.
 Migrations run from the entrypoint rather than a pre-deploy hook, because hooks are a paid

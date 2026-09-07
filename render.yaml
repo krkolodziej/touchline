@@ -22,14 +22,28 @@ services:
         value: production
       - key: APP_DEBUG
         value: false
+
+      # Typed in rather than generated. `generateValue` produces a random string of the
+      # platform's own length, and Laravel's AES-256-CBC cipher wants exactly thirty-two
+      # bytes, base64-encoded and prefixed — anything else boots fine and then answers five
+      # hundred to every request with "unsupported cipher or incorrect key length".
+      #
+      #     php artisan key:generate --show
       - key: APP_KEY
-        generateValue: true
+        sync: false
       - key: APP_URL
         sync: false
 
       # The Neon connection string, under the name Laravel actually reads. Postgres from
       # Neon rather than a free Render database, because a free Render database is deleted
       # after thirty days and a free Neon project is not.
+      #
+      # The *direct* endpoint, not the pooled one. Neon's pooler is PgBouncer in transaction
+      # mode, and the first migration on an empty database dies there: every statement comes
+      # back "current transaction is aborted", including the very first one the migration
+      # sends, which means the connection it was handed was already inside a failed
+      # transaction. One small instance opens a handful of connections, so the pooler was
+      # buying nothing to begin with.
       - key: DB_CONNECTION
         value: pgsql
       - key: DB_URL
